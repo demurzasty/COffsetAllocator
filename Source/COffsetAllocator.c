@@ -1,6 +1,14 @@
 #include <OA/COffsetAllocator.h>
 
-#include <assert.h>
+// This is a port of Sebastian Aaltonen's OffsetAllocator for C.
+// See: https://github.com/sebbbi/OffsetAllocator
+
+#ifndef NDEBUG
+#    include <assert.h>
+#    define OA_ASSERT(x) assert(x)
+#else
+#    define OA_ASSERT(x) ((void)0)
+#endif
 
 #ifdef _MSC_VER
 #    include <intrin.h>
@@ -328,7 +336,7 @@ OA_Allocation OA_Allocate(OA_OffsetAllocator* offsetAllocator, uint32_t size) {
 }
 
 void OA_Free(OA_OffsetAllocator* offsetAllocator, OA_Allocation allocation) {
-    assert(allocation.metadata != OA_NO_SPACE);
+    OA_ASSERT(allocation.metadata != OA_NO_SPACE);
     if (!offsetAllocator->nodes) {
         return;
     }
@@ -337,7 +345,7 @@ void OA_Free(OA_OffsetAllocator* offsetAllocator, OA_Allocation allocation) {
     OA_Node* node = &offsetAllocator->nodes[nodeIndex];
 
     // Double delete check
-    assert(node->used == 1);
+    OA_ASSERT(node->used == 1);
 
     // Merge with neighbors...
     uint32_t offset = node->dataOffset;
@@ -352,7 +360,7 @@ void OA_Free(OA_OffsetAllocator* offsetAllocator, OA_Allocation allocation) {
         // Remove node from the bin linked list and put it in the freelist
         OA_RemoveNodeFromBin(offsetAllocator, node->neighborPrev);
 
-        assert(prevNode->neighborNext == nodeIndex);
+        OA_ASSERT(prevNode->neighborNext == nodeIndex);
         node->neighborPrev = prevNode->neighborPrev;
     }
 
@@ -364,7 +372,7 @@ void OA_Free(OA_OffsetAllocator* offsetAllocator, OA_Allocation allocation) {
         // Remove node from the bin linked list and put it in the freelist
         OA_RemoveNodeFromBin(offsetAllocator, node->neighborNext);
 
-        assert(nextNode->neighborPrev == nodeIndex);
+        OA_ASSERT(nextNode->neighborPrev == nodeIndex);
         node->neighborNext = nextNode->neighborNext;
     }
 
